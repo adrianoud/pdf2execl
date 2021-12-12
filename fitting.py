@@ -29,10 +29,10 @@ for sh in wb.worksheets:
     for i in range(29):
         x1_gasFlow.append(sh.cell(row=i + 3, column=2).value / 3.6)  # 单位转换为kg/s
         x2_steamFlow.append(sh.cell(row=i + 3, column=12).value / 3600)  # 单位转换为kg/s
-        y1_gasLoss.append(sh.cell(row=i + 3, column=4).value)
-        y2_steamLoss.append(sh.cell(row=i + 3, column=16).value * 1000)  # 单位转换为kpa
-        y3_heatArea.append(sh.cell(row=i + 3, column=20).value / tempdiff(sh.cell(row=i + 3, column=5).value, sh.cell(row=i + 3, column=17).value,
-        sh.cell(row=i + 3, column=6).value, sh.cell(row=i + 3, column=18).value))
+        y1_gasLoss.append(sh.cell(row=i + 3, column=4).value / 1000000)     # 单位转换为Mpa
+        y2_steamLoss.append(sh.cell(row=i + 3, column=16).value)  # 单位保持为Mpa
+        y3_heatArea.append(sh.cell(row=i + 3, column=20).value * 1000 / 3.6 / tempdiff(sh.cell(row=i + 3, column=5).value, sh.cell(row=i + 3, column=17).value,
+        sh.cell(row=i + 3, column=6).value, sh.cell(row=i + 3, column=18).value))    # 换热量单位转为kw
 
     pa_x1y1 = np.polyfit(x1_gasFlow, y1_gasLoss, 1)
     pa_x1y1_2 = np.polyfit(x1_gasFlow, y1_gasLoss, 2)
@@ -63,31 +63,43 @@ for sh in wb.worksheets:
     x2y2_Square = np.corrcoef(y2_steamLoss, y2_Pre)[0, 1]
     x2y2_Square_2 = np.corrcoef(y2_steamLoss, y2_Pre_2)[0, 1]
 
-    x2y3_Square = np.corrcoef(y2_steamLoss, y3_Pre)[0, 1]
+    x2y3_Square = np.corrcoef(y3_heatArea, y3_Pre)[0, 1]
 
-    print("======================================", sh.title, "=======================================")
-    print('烟侧流量 vs 烟侧压损')
-    print('线性回归：')
-    print("系数：", pa_x1y1, "R平方：", x1y1_Square, "最大正误差：", max(y1_error), "最大负误差：", min(y1_error))
-    print('二次回归：')
-    print("系数：", pa_x1y1_2, "R平方：", x1y1_Square_2, "最大正误差：", max(y1_error_2), "最大负误差：", min(y1_error_2))
-    if (x1y1_Square < 0.9 or max(y1_error) > 0.1 or min(y1_error) < -0.1) and (x1y1_Square_2 < 0.9 or max(y1_error_2) > 0.1 or min(y1_error_2) < -0.1):
-        print("!!!!!!&&&&!!!!!!!!!warning!!!!!!!!!&&&!!!!!!!!")
-    print("\n")
+    if sh.title == "低省1":
+        print("======================================", sh.title, "=======================================")
+        print('烟侧流量 vs 烟侧压损')
+        print('线性回归：')
+        print("系数：", '%.30f'%pa_x1y1[0],'%.30f'%pa_x1y1[1])
+        print("R平方：", x1y1_Square, "最大正误差：", max(y1_error), "最大负误差：", min(y1_error))
+        print('二次回归：')
+        print("系数：", '%.30f'%pa_x1y1_2[0], '%.30f'%pa_x1y1_2[1],'%.30f'%pa_x1y1_2[2])
+        print("R平方：", x1y1_Square_2, "最大正误差：", max(y1_error_2), "最大负误差：", min(y1_error_2))
+        if (x1y1_Square < 0.9 or max(y1_error) > 0.1 or min(y1_error) < -0.1) and (x1y1_Square_2 < 0.9 or max(y1_error_2) > 0.1 or min(y1_error_2) < -0.1):
+            print("\033[0;31;40m!!!!!!&&&&!!!!!!!!!warning!!!!!!!!!&&&!!!!!!!!\033[0m")
+        print("\n")
 
-    print('汽侧流量 vs 汽侧压损')
-    print('线性回归：')
-    print("系数：", pa_x2y2, "R平方：", x2y2_Square, "最大正误差：", max(y2_error), "最大负误差：", min(y2_error))
-    print('二次回归：')
-    print("系数：", pa_x2y2_2, "R平方：", x2y2_Square_2, "最大正误差：", max(y2_error_2), "最大负误差：", min(y2_error_2))
-    if (x2y2_Square < 0.9 or max(y2_error) > 0.1 or min(y2_error) < -0.1) and (x2y2_Square_2 < 0.9 or max(y2_error_2) > 0.1 or min(y2_error_2) < -0.1):
-        print("!!!!!!&&&&!!!!!!!!!warning!!!!!!!!!&&&!!!!!!!!")
-    print("\n")
-    print('汽侧流量 vs 当量换热面积, 线性回归')
-    print("系数：", pa_x2y3, "R平方：", x2y3_Square, "最大正误差：", max(y3_error), "最大负误差：", min(y3_error))
-    if x2y3_Square < 0.9 or max(y3_error) > 0.1 or min(y3_error) < -0.1:
-        print("!!!!!!&&&&!!!!!!!!!warning!!!!!!!!!&&&!!!!!!!!")
-    print("\n")
+        print('汽侧流量 vs 汽侧压损')
+        print('线性回归：')
+        print("系数：", '%.30f'%pa_x2y2[0], '%.30f'%pa_x2y2[1])
+        print("R平方：", x2y2_Square, "最大正误差：", max(y2_error), "最大负误差：", min(y2_error))
+        print('二次回归：')
+        print("系数：", '%.30f'%pa_x2y2_2[0], '%.30f'%pa_x2y2_2[1], '%.30f'%pa_x2y2_2[2])
+        print("R平方：", x2y2_Square_2, "最大正误差：", max(y2_error_2), "最大负误差：", min(y2_error_2))
+        if (x2y2_Square < 0.9 or max(y2_error) > 0.1 or min(y2_error) < -0.1) and (x2y2_Square_2 < 0.9 or max(y2_error_2) > 0.1 or min(y2_error_2) < -0.1):
+            print("\033[0;31;40m!!!!!!&&&&!!!!!!!!!warning!!!!!!!!!&&&!!!!!!!!\033[0m")
+        print("\n")
+
+        print('汽侧流量 vs 当量换热面积, 线性回归')
+        print("系数：", pa_x2y3, "R平方：", x2y3_Square, "最大正误差：", max(y3_error), "最大负误差：", min(y3_error))
+        if x2y3_Square < 0.9 or max(y3_error) > 0.1 or min(y3_error) < -0.1:
+            print("\033[0;31;40m!!!!!!&&&&!!!!!!!!!warning!!!!!!!!!&&&!!!!!!!!\033[0m")
+        print("\n")
+
+    # f1 = open("fitting.txt", 'a+')
+    # f1.write("======================================" + sh.title + "=======================================")
+    # f1.write('\n')
+    # f1.write('线性回归：')
+    # f1.close()
 #   print(x1_gasFlow)
 #   print(y1_gasLoss)
 #   print(y1_Pre)
